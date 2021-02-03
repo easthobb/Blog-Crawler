@@ -1,0 +1,26 @@
+create table public.blog_count_info(
+	blog_id varchar(50),
+	count_date date,
+	blog_url varchar(100),
+	buddy_count integer,
+	visitor_count integer,
+	post_count integer,
+	primary key(blog_id,count_date)
+);
+
+create table public.post_info(
+	post_id varchar(50) primary key,
+	blog_id varchar(50),
+	post_published_date date,
+	post_title varchar(100), 
+	post_hashtag varchar(500),
+	post_url varchar(100),
+	post_text text,
+	foreign key (blog_id,post_published_date) references blog_count_info(blog_id,count_date)
+);
+
+create table public.post_reaction_info(
+	post_id varchar(50) primary key REFERENCES post_info(post_id),
+	sympathy_count integer,
+	comment_count integer
+);
