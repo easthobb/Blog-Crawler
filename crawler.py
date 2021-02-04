@@ -149,7 +149,7 @@ class BlogCrawler(object):
                 temp = list(map(int,post_published_date.split('-')))
                 post_pub = datetime.date(temp[0],temp[1],temp[2])
                 if (post_pub <= crawl_start_date ): ## ex) 1. 19 < 1.20 (now 2.1)
-                    print("this post's pub time is ",post_pub,'earlier than crawl_start_data')
+                    print(post_id,": THIS POST PUB AT",post_pub,'EARLIER THAN CRAWL START DATE. DROP')
                     flag = 1
                     break
                 else:
@@ -193,76 +193,175 @@ class BlogCrawler(object):
     
     def start_crawl(self):
 
-        ##DB 조회 및 기등록된 블로그인지 확인.
-        blog_id_list= [] # 블로그의 아이디만 저장 
-        blog_date_list = [] # [blog_id,blog_date]블로그의 데이트 리스트
-        
-        db_blog = pg_conn.session.query(pg_conn.Blog) ## 받아온 블로그 정보
-        for blog in db_blog:
-            blog_id_list.append(blog.blog_id)
-            blog_date_list.append([blog.blog_id,blog.count_date])
-        
-        ## 등록된 블로그 : 
-        if self.blog_id in blog_id_list:##이미 등록되어 있는 블로그의 경우 # 일간 정보까지 같이 받아와야겠네~
+        try: 
+            ####################################DB 조회 및 기등록된 블로그인지 확인.
+            blog_id_list= [] # 블로그의 아이디만 저장 
+            db_blog = pg_conn.session.query(pg_conn.Blog) ## 받아온 블로그 정보
+            for blog in db_blog:
+                blog_id_list.append(blog.blog_id)
+                #blog_date_list.append([blog.blog_id,blog.count_date])
+        except:
+            print("DB BLOG INFO CONNECT FAIL")
+        ####### 등록된 블로그 : 
+        if self.blog_id in blog_id_list: 
+            
             print(list(set(blog_id_list)), "ARE IN DB")
+            ####### 크롤링
+            try:
+                blog_info = self.crawl_blog_info(self.blog_id,self.crawl_start_date)
+                post_info = self.crawl_post_info(self.blog_id,self.crawl_start_date)
+                blog_info = self.aggregate_post_count(blog_info,post_info)
+            except:
+                print("CRAWLER GET FAIL(ALREADY REGISTERD BLOG)")
             
-        
-        ## 미등록된 블로그 : 
-        else:
-            blog_info = self.crawl_blog_info(self.blog_id,self.crawl_start_date)
-            post_info = self.crawl_post_info(self.blog_id,self.crawl_start_date)
-            blog_info = self.aggregate_post_count(blog_info,post_info)
-            ##크롤링한 블로그 정보 삽입
-            for blog in blog_info:
-                for i in range(len(blog)): # None 방지
-                    if blog[i] is None:
-                        blog[i] = 0
-                db_new_register_blog = pg_conn.Blog(blog_id=blog[0],count_date=blog[3],buddy_count=blog[2],visitor_count=blog[1],post_count=blog[4],blog_url=blog[5]) 
-                pg_conn.session.add(db_new_register_blog)
-            
-            pg_conn.session.commit()
-            
-            for post in post_info:
-                #크롤링한 포스트 정보 삽입
-                db_new_register_post = pg_conn.Post(
-                    post_id=post[0],
-                    blog_id= self.blog_id,
-                    post_published_date=post[1],
-                    post_title= post[2],
-                    post_hashtag= post[3],
-                    post_url= post[4],
-                    post_text= post[5], 
-                )
-                pg_conn.session.add(db_new_register_post)
-                #크롤링한 리액션 정보 삽입
-                db_new_register_reaction = pg_conn.Reaction(
-                    post_id = post[0],
-                    sympathy_count = post[6],
-                    comment_count = post[7]
-                )
+            ################# 블로그 테이블 업데이트 시퀀스
+            try:
+                fetch = pg_conn.session.query(pg_conn.Blog).filter(pg_conn.Blog.blog_id == self.blog_id)
+                already_crawl_date_list = []
+                for row in fetch:
+                    already_crawl_date_list.append(row.count_date.isoformat()) ## iso 형식으로 날짜 받아옴
                 
-                pg_conn.session.add(db_new_register_reaction)
+                for blog in blog_info: # 개별 날짜에 대해서 반복 검증
+                    if blog[3] in already_crawl_date_list:
+                        print('ALREADY CRAWLED ALL POST OF THE DAY :',blog[3])#이미 크롤링 한 날짜일 경우 방문자 수만 업데이트
+                        db_update_register_blog = pg_conn.session.query(pg_conn.Blog).filter(
+                            (pg_conn.Blog.blog_id==self.blog_id) and (pg_conn.Blog.count_date == blog[3])).first()
+                        if (blog[1] != None) and (db_update_register_blog.visitor_count != None):
+                            print(db_update_register_blog.visitor_count)
+                            if db_update_register_blog.visitor_count < int(blog[1]):
+                                db_update_register_blog.visitor_count = int(blog[1]) ## 당일 방문자 수가 늘었을 경우만 반영
+                            else:
+                                pass
+                        else :
+                            pass#print(blog[3],"DAY's VISITOR INFO ARE NOT AVAILABLE")
+                    else: #크롤링 하지 않은 새로운 날짜일 경우
+                        print('NEW DATE CRAWL')
+                        db_new_register_blog = pg_conn.Blog(
+                            blog_id=blog[0],
+                            count_date=blog[3],
+                            buddy_count=blog[2],
+                            visitor_count=blog[1],
+                            post_count=blog[4],
+                            blog_url=blog[5])
+                        pg_conn.session.add(db_new_register_blog)
+                        
+                    pg_conn.session.commit()
+
+                print(already_crawl_date_list)
+            except:
+                print("DB BLOG INFO TABLE UPDATE SEQUENCE FAIL")
+            ################# 포스트 테이블 업데이트 시퀀스
+            try:
+                fetch = pg_conn.session.query(pg_conn.Post).filter(
+                    pg_conn.Post.blog_id == self.blog_id and pg_conn.Post.post_published_date >= self.crawl_start_date)
+                already_crawl_post_list = []
+                for row in fetch:
+                    already_crawl_post_list.append(row.post_id)
+                
+                print(already_crawl_post_list)
+
+                for post in post_info: # 개별 포스트에 대해 반복 검증
+                    if post[0] in already_crawl_post_list:#이미 크롤링한 게시물이므로 리액션 테이블만 업데이트
+                        print('ALREADY CRAWLED POST , UPDATE :',post[0])
+                        
+                        post_reaction_fetch = pg_conn.session.query(pg_conn.Reaction).filter(pg_conn.Reaction.post_id == post[0])
+                        already_post_reaction=[]
+                        for row in post_reaction_fetch:
+                            already_post_reaction.append(row.crawl_date)
+
+                        
+                        ## 오늘 이미 크롤링 수행한 게시물 , 업데이트 (하루에 여러번 돌리는 경우)
+                        if datetime.date.today() in already_post_reaction:
+                            db_update_register_reaction = pg_conn.session.query(pg_conn.Reaction).filter(
+                            pg_conn.Reaction.post_id==post[0] and pg_conn.Reaction.crawl_date == datetime.date.today()).first()
+                            db_update_register_reaction.sympathy_count = post[7]
+                            db_update_register_reaction.comment_count = post[6]
+                            pg_conn.session.commit()
+                        ##  오늘의 첫 스캔, 오늘의 리액션을 담는다. (하루에 처음 돌리는 경우)
+                        else: 
+                            db_new_register_reaction = pg_conn.Reaction(
+                                post_id = post[0],
+                                sympathy_count = post[6],
+                                comment_count = post[7],
+                                crawl_date = datetime.date.today()
+                            )
+                            pg_conn.session.add(db_new_register_reaction)
+                    
+                    else:#크롤링 하지 않은 새로운 게시물일 경우
+                        print('NEW POST CRAWL,')
+                        
+                        db_new_register_post = pg_conn.Post(
+                        post_id=post[0],
+                        blog_id= self.blog_id,
+                        post_published_date=post[1],
+                        post_title= post[2],
+                        post_hashtag= post[3],
+                        post_url= post[4],
+                        post_text= post[5], 
+                        )
+                        pg_conn.session.add(db_new_register_post)
+                        pg_conn.session.commit()
+                        db_new_register_reaction = pg_conn.Reaction(
+                        post_id = post[0],
+                        sympathy_count = post[6],
+                        comment_count = post[7],
+                        crawl_date = datetime.date.today()
+                        )
+                        pg_conn.session.add(db_new_register_reaction)
+                        pg_conn.session.commit()
+                
+                print(already_crawl_post_list)
+            except:
+                print("DB POST INFO AND REACTION INFO TABLE UPDATE FAIL")
+
             
-            
-
-            pg_conn.session.commit()
-
-
-
-
         
+        #################################### 미등록된 블로그 : 
+        else:
+            try:
+                blog_info = self.crawl_blog_info(self.blog_id,self.crawl_start_date)
+                post_info = self.crawl_post_info(self.blog_id,self.crawl_start_date)
+                blog_info = self.aggregate_post_count(blog_info,post_info)
+            except:
+                print("CRAWLER GET FAIL(NEW REGISTERD BLOG)")
+            ##크롤링한 블로그 정보 삽입
+            try:
+                for blog in blog_info:
+                    for i in range(len(blog)): # None 방지
+                        if blog[i] is None:
+                            blog[i] = 0
+                    db_new_register_blog = pg_conn.Blog(blog_id=blog[0],count_date=blog[3],buddy_count=blog[2],visitor_count=blog[1],post_count=blog[4],blog_url=blog[5]) 
+                    pg_conn.session.add(db_new_register_blog)
+                
+                pg_conn.session.commit()
+                
+                for post in post_info:
+                    #크롤링한 포스트 정보 삽입
+                    db_new_register_post = pg_conn.Post(
+                        post_id=post[0],
+                        blog_id= self.blog_id,
+                        post_published_date=post[1],
+                        post_title= post[2],
+                        post_hashtag= post[3],
+                        post_url= post[4],
+                        post_text= post[5], 
+                    )
+                    pg_conn.session.add(db_new_register_post)
+                    pg_conn.session.commit()
+                    #크롤링한 리액션 정보 삽입
+                    db_new_register_reaction = pg_conn.Reaction(
+                        post_id = post[0],
+                        sympathy_count = post[6],
+                        comment_count = post[7],
+                        crawl_date = datetime.date.today()
+                    )
+                    
+                    pg_conn.session.add(db_new_register_reaction)
+                    pg_conn.session.commit()
+            except:
+                print("DB POST&BLOG INFO INSERT FAIL")
         
-
-        ## TEST
-        #print(self.blog_id)
-        #test_blog_info = self.crawl_blog_info(self.blog_id,self.crawl_start_date)
-        #test_post_info = self.crawl_post_info(self.blog_id,self.crawl_start_date)
-        #test_blog_info = self.aggregate_post_count(test_blog_info,test_post_info)
-        #for day in test_blog_info:
-        #    print(day)
-
-        
-
+        pg_conn.session.close()
     
 if __name__=="__main__":
     print("INPUT BLOG ID :")

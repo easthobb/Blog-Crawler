@@ -3,6 +3,7 @@ from sqlalchemy import Column, String, Integer, Date, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base  
 from sqlalchemy.orm import sessionmaker
 
+
 db = create_engine(db_string)  
 base = declarative_base()
 print('db engine created!!!!')
@@ -33,26 +34,39 @@ class Reaction(base):
 
     post_id = Column(String(50),ForeignKey(Post.post_id),primary_key=True)
     sympathy_count = Column(Integer)
-    comment_count = Column(Integer) 
+    comment_count = Column(Integer)
+    crawl_date = Column(Date,primary_key=True)
 
 Session = sessionmaker(db)  
 session = Session()
 base.metadata.create_all(db)
 print('db session created!!')
-# Create 
-#test_blog1 = Blog(blog_id='test8',count_date='2021-02-18',blog_url ='TEST!!!!!!!!!!!!!!!!!!!!')
-#session.add(test_blog1)  
-#session.commit()
+#Create 
+# test_blog1 = Blog(blog_id='test8',count_date='2021-02-18',blog_url ='TEST!!!!!!!!!!!!!!!!!!!!')
+# session.add(test_blog1)  
+# session.commit()
 
-# Read
-#tests = session.query(Blog)
-#for te in tests:  
-#    print(te.blog_id)
+# #Read
+# tests = session.query(Blog)
+# for te in tests:  
+#     print(te.blog_id)
 
 #update
 #test_blog1.blog_id = 'testNop12e'
-#session.commit()
+#session.commit()ㅊㅌ
 
 # Delete
 #session.delete(test_blog1)  
 #session.commit()  
+#update
+#test = session.query(Blog).filter(Blog.visitor_count== 459).first()
+#test.visitor_count += 1
+# test_blog1 = Blog(blog_id='test8',count_date='2021-02-18',blog_url ='TEST!!!!!!!!!!!!!!!!!!!!')
+# import datetime
+# ll = session.query(Blog).filter(Blog.count_date > '2020-01-01')
+# liss=[]
+# for l in ll:
+#     liss.append(l.count_date)
+#     #print(l.count_date)
+# print(liss)
+# session.commit(
