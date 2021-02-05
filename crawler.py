@@ -6,6 +6,7 @@ import json
 import urllib
 import random
 import pg_conn
+## test
 ################ requirement ##############
 # ### 데이터 수집 요구사항 정리(21.01.26)
 # for 
