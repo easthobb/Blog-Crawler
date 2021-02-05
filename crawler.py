@@ -110,25 +110,32 @@ class BlogCrawler(object):
                 except:
                     post_published_date = datetime.date.today().isoformat()
                 
-                ## 태그리스트를 받아오는 쿼리
-                tag_URL = self.BASE_URL + f'BlogTagListInfo.nhn?blogId={blog_id}&logNoList={post_id}&logType=mylog'
-                print("REQUEST : ",tag_URL)
-                tag_response = requests.get(tag_URL)
-                tag_response = tag_response.json()
-                post_hashtag = urllib.parse.unquote(tag_response['taglist'][0]['tagName'])
-
-                ## 텍스트를 받아오는 쿼리
-                text_URL = self.BASE_URL + f"PostView.nhn?blogId={blog_id}&logNo={post_id}&redirect=Dlog&widgetTypeCall=true&directAccess=true"
-                print("REQUEST : ",text_URL)
-                text_response = requests.get(text_URL)
-                text_response = BeautifulSoup(text_response.text,'html.parser')
-                post_text = ""
-                for text in text_response.select("div.se-main-container p"):
-                    post_text = post_text + str(text.text)
+                try:
+                    ## 태그리스트를 받아오는 쿼리
+                    tag_URL = self.BASE_URL + f'BlogTagListInfo.nhn?blogId={blog_id}&logNoList={post_id}&logType=mylog'
+                    print("REQUEST TAG : ",tag_URL)
+                    tag_response = requests.get(tag_URL)
+                    tag_response = tag_response.json()
+                    post_hashtag = urllib.parse.unquote(tag_response['taglist'][0]['tagName'])
+                except:
+                    print("POST DOESN'T HAVE TAGS POST ID: ",post_id)
+                    post_hashtag = None
+                try:
+                    ## 텍스트를 받아오는 쿼리
+                    text_URL = self.BASE_URL + f"PostView.nhn?blogId={blog_id}&logNo={post_id}&redirect=Dlog&widgetTypeCall=true&directAccess=true"
+                    print("REQUEST TEXT: ",text_URL)
+                    text_response = requests.get(text_URL)
+                    text_response = BeautifulSoup(text_response.text,'html.parser')
+                    post_text = ""
+                    for text in text_response.select("div.se-main-container p"):
+                        post_text = post_text + str(text.text)
+                except:
+                    print("CAN'T CRAWL POST TEXT POST ID:",post_id)
+                    post_text = ""
 
                 ## 공감 수를 받아오는 쿼리
                 sympathy_URL = f'https://blog.like.naver.com/v1/search/contents?suppress_response_codes=true&q=BLOG[{blog_id}_{post_id}]'
-                print("REQUEST:",sympathy_URL)
+                print("REQUEST SYMPATHY:",sympathy_URL)
                 sympathy_response = requests.get(sympathy_URL)
                 sympathy_response = sympathy_response.json()
                 post_sympathy_count = sympathy_response['contents'][0]['reactions'][0]['count']
@@ -142,7 +149,7 @@ class BlogCrawler(object):
                     post_comment_count = int(post_comment_count)                
 
                 post_info = [post_id,post_published_date,post_title,post_hashtag,post_url,post_text,post_comment_count,post_sympathy_count]
-                print("POST INFO :",post_info)
+                print("POST INFO :",post_info[0])
                 
 
                 #시간비교를 위해서 date 비교
@@ -161,9 +168,9 @@ class BlogCrawler(object):
             else:
                 page = page + 1
             
-        ##debug
-        for post in post_info_list:
-            print(post)
+        # ##debug
+        # for post in post_info_list:
+        #     print(post)
         return post_info_list
 
     def aggregate_post_count(self,blog_info_list,post_info_list):
@@ -235,7 +242,7 @@ class BlogCrawler(object):
                         else :
                             pass#print(blog[3],"DAY's VISITOR INFO ARE NOT AVAILABLE")
                     else: #크롤링 하지 않은 새로운 날짜일 경우
-                        print('NEW DATE CRAWL')
+                        print('NEW DATE CRAWL :',blog[3])
                         db_new_register_blog = pg_conn.Blog(
                             blog_id=blog[0],
                             count_date=blog[3],
@@ -288,7 +295,7 @@ class BlogCrawler(object):
                             pg_conn.session.add(db_new_register_reaction)
                     
                     else:#크롤링 하지 않은 새로운 게시물일 경우
-                        print('NEW POST CRAWL,')
+                        print('NEW POST CRAWL : ',post[0])
                         
                         db_new_register_post = pg_conn.Post(
                         post_id=post[0],
@@ -370,4 +377,5 @@ if __name__=="__main__":
     crawl_start_date = input()
     crawler = BlogCrawler(blog_id,crawl_start_date)
     crawler.start_crawl()
+    print("ALL DONE")
     

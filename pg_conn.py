@@ -24,7 +24,7 @@ class Post(base):
     post_id = Column(String(50),primary_key=True) # varchar(50)
     blog_id = Column(String(50), ForeignKey(Blog.blog_id)) #varchar(50) - 설계상 Date lean 하게 설정
     post_published_date = Column(String(50), ForeignKey(Blog.count_date))
-    post_title = Column(String(100))
+    post_title = Column(String(500))
     post_hashtag = Column(String(500))
     post_url = Column(String(100))
     post_text = Column(Text)
@@ -41,32 +41,24 @@ Session = sessionmaker(db)
 session = Session()
 base.metadata.create_all(db)
 print('db session created!!')
-#Create 
+
+#### ORM CRUD EXAMPLEs ####
+# Create 
 # test_blog1 = Blog(blog_id='test8',count_date='2021-02-18',blog_url ='TEST!!!!!!!!!!!!!!!!!!!!')
 # session.add(test_blog1)  
 # session.commit()
 
-# #Read
+# Read
 # tests = session.query(Blog)
 # for te in tests:  
 #     print(te.blog_id)
 
-#update
-#test_blog1.blog_id = 'testNop12e'
-#session.commit()ㅊㅌ
+# Update
+# test_blog1.blog_id = 'testNop12e'
+# test = session.query(Blog).filter(Blog.visitor_count== 459).first()
+# test.visitor_count += 1
+# session.commit()
 
 # Delete
-#session.delete(test_blog1)  
-#session.commit()  
-#update
-#test = session.query(Blog).filter(Blog.visitor_count== 459).first()
-#test.visitor_count += 1
-# test_blog1 = Blog(blog_id='test8',count_date='2021-02-18',blog_url ='TEST!!!!!!!!!!!!!!!!!!!!')
-# import datetime
-# ll = session.query(Blog).filter(Blog.count_date > '2020-01-01')
-# liss=[]
-# for l in ll:
-#     liss.append(l.count_date)
-#     #print(l.count_date)
-# print(liss)
-# session.commit(
+# session.delete(test_blog1)  
+# session.commit()  
