@@ -3,6 +3,10 @@ from sqlalchemy import Column, String, Integer, Date, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base  
 from sqlalchemy.orm import sessionmaker
 
+from sqlalchemy import create_engine  
+from sqlalchemy import Column, String, Integer, Date, ForeignKey, Text
+from sqlalchemy.ext.declarative import declarative_base  
+from sqlalchemy.orm import sessionmaker
 
 db = create_engine(db_string)  
 base = declarative_base()

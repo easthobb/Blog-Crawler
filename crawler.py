@@ -5,7 +5,6 @@ import datetime
 import json
 import urllib
 import random
-#import pg_conn
 import sqlalchemy
 from sqlalchemy import create_engine  
 from sqlalchemy import Column, String, Integer, Date, ForeignKey, Text
@@ -25,6 +24,7 @@ import pandas as pd
 # 블로그) 채널 id, 일자별 게시물 수, 방문자 수, url
 # 블로그 게시물) 게시물 id, 제목, 내용, 해시태그, 공감, 댓글, 작성시간, url
 # >> Youtube 수집 처럼 meta와 변화량 데이터를 구분해서 저장.
+
 
 
 class BlogCrawler(object):
@@ -233,25 +233,7 @@ class BlogCrawler(object):
             
     def db_manage_post(self,post_info_list):
         db_engine = create_engine(DB_CONNECT_INFO)
-        
         for post in post_info_list:
-        #     post_id = post['post_id']
-        #     blog_id = post['blog_id']
-        #     post_published_date = post['post_published_date']
-        #     post_title = post['post_title']
-        #     post_hashtag = post['post_hashtag']
-        #     post_url = post['post_url']
-        #     post_text = post['post_text']
-        #     post_text=post_text.replace("'","").replace('"',"")
-        #     post_text = sqlalchemy.text(post_text)
-        #     print(post_text)
-        #     post_sympathy_count = post['post_sympathy_count']
-        #     post_comment_count = post['post_comment_count']
-        #     post_crawl_date = post['post_crawl_date']
-
-        #     db_engine.execute(
-        #         sqlalchemy.text(f"INSERT INTO post_info (post_id,blog_id,post_published_date,post_title,post_hashtag,post_url,post_text) VALUES ('{post_id}','{blog_id}','{post_published_date}','{post_title}','{post_hashtag}','{post_url}','{post_text}') ON CONFLICT (post_id) DO NOTHING;")
-        #     )
             try:
                 query = '''
                 INSERT INTO post_info  (post_id,blog_id,post_published_date,post_title,post_hashtag,post_url,post_text)
@@ -286,11 +268,7 @@ class BlogCrawler(object):
                 db_engine.execute(query, params)
             except Exception as e:
                 print(e)
-            #db_engine.execute(
-            #    sqlalchemy.text(f"INSERT INTO post_reaction_info (post_id,sympathy_count,comment_count,crawl_date) VALUES ('{post_id}','{post_sympathy_count}','{post_comment_count}','{post_crawl_date}') ON CONFLICT (post_id,crawl_date) DO UPDATE SET sympathy_count={post_sympathy_count}, comment_count={post_comment_count};")
-            #)
 
-        
         db_engine.dispose()
     
     def start_crawl(self):
