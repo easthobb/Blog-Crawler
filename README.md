@@ -28,7 +28,9 @@ This repository is for Naver blog-post crawl and does not use API to crawl post 
 
 ## Schema and SQL querys
 ![DBERD](https://user-images.githubusercontent.com/57410044/107179282-800d1600-6a19-11eb-9bdc-2614bfed9928.png)
-    create table public.blog_count_info(
+
+    create table public.blog_count_info
+    (
 	    blog_id varchar(50),
 	    count_date date,
 	    blog_url varchar(100),
@@ -38,7 +40,8 @@ This repository is for Naver blog-post crawl and does not use API to crawl post 
 	    primary key(blog_id,count_date)
     );
 
-    create table public.post_info(
+    create table public.post_info
+    (
 	    post_id varchar(50) primary key,
 	    blog_id varchar(50),
 	    post_published_date date,
@@ -49,7 +52,8 @@ This repository is for Naver blog-post crawl and does not use API to crawl post 
 	    foreign key (blog_id,post_published_date) references blog_count_info(blog_id,count_date)
     );
 
-    create table public.post_reaction_info(
+    create table public.post_reaction_info
+    (
 	    post_id varchar(50) primary key REFERENCES post_info(post_id),
 	    sympathy_count integer,
 	    comment_count integer
