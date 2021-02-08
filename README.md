@@ -5,6 +5,9 @@
 
 This repository is for Naver blog-post crawl and does not use API to crawl post data for individual blogs by date. The blog crawler receives the Naver blog's ID (which can be checked through the URL) as a parameter and the start date of crawling as an input factor. When you run a crawler through crawler.py, the crawled data is loaded into the Postgre DB. The DB schema that loads the data crawled by the crawler is the same as the attached ERD and tables.txt. BlogCrawler's method can also be used as public. 
 
+You can see dev log here!
+[https://www.notion.so/hobbeskim/Naver-Blog-Crawler-eed6272e0c3446eb833297735ee02c9b]
+
 ## Have To Prepare
 >postgresql server or other db
 
