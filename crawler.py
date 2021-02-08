@@ -97,7 +97,7 @@ class BlogCrawler(object):
         flag = 0
         while True:
             try:
-                url = self.base_url + \
+                url = self.base_url + 
                     f'PostTitleListAsync.nhn?blogId={blog_id}&viewdate=&currentPage={page}&countPerPage={self.paging}'
                 print("REQUEST :", url)
                 response = requests.get(url)
@@ -112,8 +112,7 @@ class BlogCrawler(object):
                 post = response['postList'][i]
                 post_id = post['logNo']
                 post_published_date = None
-                post_title = urllib.parse.unquote(
-                    post['title']).replace('+', ' ')
+                post_title = urllib.parse.unquote(post['title']).replace('+', ' ')
                 post_hashtag = None
                 post_url = f"https://blog.naver.com/{blog_id}/{post_id}"
                 post_text = None

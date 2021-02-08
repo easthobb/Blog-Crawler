@@ -1,3 +1,8 @@
+"""
+this file doesn't use at blog crawler 2.0
+"""
+
+
 from sqlalchemy import create_engine  
 from sqlalchemy import Column, String, Integer, Date, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base  
