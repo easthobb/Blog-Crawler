@@ -8,7 +8,7 @@ import random
 import sqlalchemy
 from sqlalchemy import create_engine
 
-DB_CONNECT_INFO = "postgresql://test:testpwd@localhost:5432/crawler"
+DB_CONNECT_INFO = "postgresql://testuser:testpwd@localhost:5432/crawler"
 
 class BlogCrawler(object):
     """
